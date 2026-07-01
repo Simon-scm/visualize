@@ -1,4 +1,4 @@
-baseUrl: http://localhost:9999
+baseUrl: http://localhost:5173
 routes:
   - name: home
     path: /
@@ -13,6 +13,7 @@ viewports:
     height: 900
 outputDir: .visualize
 watch:
+  enabled: false
   include:
     - src/**/*.{html,css,scss,js,jsx,ts,tsx}
     - public/**/*

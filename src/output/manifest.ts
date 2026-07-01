@@ -6,6 +6,13 @@ export type ManifestCapture = {
   height: number;
   screenshot: string;
   status: "pending" | "ok" | "failed";
+  requestedUrl: string;
+  finalUrl?: string;
+  title?: string;
+  httpStatus?: number;
+  consoleErrorCount: number;
+  pageErrorCount: number;
+  durationMs: number;
   error?: string;
 };
 

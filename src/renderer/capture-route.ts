@@ -1,5 +1,5 @@
 import path from "node:path";
-import type { Browser, Page } from "playwright";
+import type { Browser, Page, Response } from "playwright";
 import type { VisualizeConfig } from "../config/schema.js";
 import type { ManifestCapture } from "../output/manifest.js";
 import { stabilizePage } from "./stabilize-page.js";
@@ -11,6 +11,8 @@ export async function captureRoute(params: {
   viewport: VisualizeConfig["viewports"][number];
 }): Promise<ManifestCapture> {
   const { browser, config, route, viewport } = params;
+  const startedAt = Date.now();
+  const requestedUrl = buildUrl(config.baseUrl, route.path);
   const screenshot = toManifestPath(
     config.outputDir,
     "latest",
@@ -34,6 +36,11 @@ export async function captureRoute(params: {
   };
 
   let page: Page | undefined;
+  let response: Response | null = null;
+  let finalUrl: string | undefined;
+  let title: string | undefined;
+  let consoleErrorCount = 0;
+  let pageErrorCount = 0;
 
   try {
     page = await browser.newPage({
@@ -43,20 +50,50 @@ export async function captureRoute(params: {
       }
     });
 
-    await page.goto(buildUrl(config.baseUrl, route.path), {
+    page.on("console", (message) => {
+      if (message.type() === "error") {
+        consoleErrorCount += 1;
+      }
+    });
+    page.on("pageerror", () => {
+      pageErrorCount += 1;
+    });
+
+    response = await page.goto(requestedUrl, {
       waitUntil: config.stabilize.waitUntil
     });
     await stabilizePage(page, config);
+    finalUrl = page.url();
+    title = await page.title();
     await page.screenshot({ path: screenshotPath, fullPage: true });
 
     return {
       ...captureBase,
-      status: "ok"
+      status: "ok",
+      requestedUrl,
+      finalUrl,
+      title,
+      httpStatus: response?.status(),
+      consoleErrorCount,
+      pageErrorCount,
+      durationMs: Date.now() - startedAt
     };
   } catch (error) {
+    if (page) {
+      finalUrl = finalUrl ?? page.url();
+      title = title ?? (await getPageTitle(page));
+    }
+
     return {
       ...captureBase,
       status: "failed",
+      requestedUrl,
+      finalUrl,
+      title,
+      httpStatus: response?.status(),
+      consoleErrorCount,
+      pageErrorCount,
+      durationMs: Date.now() - startedAt,
       error: error instanceof Error ? error.message : "Unknown capture error"
     };
   } finally {
@@ -66,6 +103,14 @@ export async function captureRoute(params: {
 
 function buildUrl(baseUrl: string, routePath: string): string {
   return new URL(routePath, baseUrl).toString();
+}
+
+async function getPageTitle(page: Page): Promise<string | undefined> {
+  try {
+    return await page.title();
+  } catch {
+    return undefined;
+  }
 }
 
 function toManifestPath(...segments: string[]): string {

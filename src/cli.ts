@@ -3,6 +3,7 @@
 import { Command } from "commander";
 import { registerCaptureCommand } from "./commands/capture.js";
 import { registerInitCommand } from "./commands/init.js";
+import { registerWatchCommand } from "./commands/watch.js";
 
 const program = new Command();
 
@@ -13,6 +14,7 @@ program
 
 registerInitCommand(program);
 registerCaptureCommand(program);
+registerWatchCommand(program);
 
 program.parseAsync(process.argv).catch((error: unknown) => {
   if (error instanceof Error) {
