@@ -13,7 +13,6 @@ viewports:
     height: 900
 outputDir: .visualize
 watch:
-  enabled: false
   include:
     - src/**/*.{html,css,scss,js,jsx,ts,tsx}
     - public/**/*

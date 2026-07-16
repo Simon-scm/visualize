@@ -1,17 +1,9 @@
 import { describe, expect, it } from "vitest";
 import { buildVisualizeMd } from "../../src/config/build-visualize-md.js";
-import { defaultConfig } from "../../src/config/default-config.js";
 
 describe("buildVisualizeMd", () => {
-  it("describes manual capture when watch mode is disabled", () => {
-    const markdown = buildVisualizeMd({
-      ...defaultConfig,
-      watch: {
-        enabled: false,
-        include: [],
-        exclude: []
-      }
-    });
+  it("describes manual capture by default", () => {
+    const markdown = buildVisualizeMd();
 
     expect(markdown).toContain(".visualize/reports/context.md");
     expect(markdown).toContain(".visualize/latest/screenshots/");
@@ -21,15 +13,8 @@ describe("buildVisualizeMd", () => {
     );
   });
 
-  it("describes watch mode when watch mode is enabled", () => {
-    const markdown = buildVisualizeMd({
-      ...defaultConfig,
-      watch: {
-        enabled: true,
-        include: [],
-        exclude: []
-      }
-    });
+  it("describes watch mode while the watcher is running", () => {
+    const markdown = buildVisualizeMd("watch");
 
     expect(markdown).toContain(".visualize/reports/context.md");
     expect(markdown).toContain(".visualize/latest/screenshots/");

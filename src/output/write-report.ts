@@ -1,17 +1,17 @@
 import path from "node:path";
 import fs from "fs-extra";
-import type { VisualizeConfig } from "../config/schema.js";
+import type { VisualizeWorkflow } from "../config/build-visualize-md.js";
 import type { ManifestCapture, VisualizeManifest } from "./manifest.js";
 
 export async function writeReport(params: {
   manifest: VisualizeManifest;
   outputDir: string;
-  config: VisualizeConfig;
+  workflow: VisualizeWorkflow;
 }): Promise<string> {
   const reportPath = toReportPath(params.outputDir);
   await fs.outputFile(
     path.join(params.outputDir, "reports", "context.md"),
-    formatReport(params.manifest, params.config)
+    formatReport(params.manifest, params.workflow)
   );
 
   return reportPath;
@@ -19,7 +19,7 @@ export async function writeReport(params: {
 
 function formatReport(
   manifest: VisualizeManifest,
-  config: VisualizeConfig
+  workflow: VisualizeWorkflow
 ): string {
   const totalCaptures = manifest.captures.length;
   const successfulCaptures = manifest.captures.filter(
@@ -70,7 +70,7 @@ function formatReport(
     "",
     "`VISUALIZE.md`",
     "",
-    buildWatchModeReportText(config),
+    buildWorkflowReportText(workflow),
     ""
   ].join("\n");
 }
@@ -139,17 +139,15 @@ function sanitizeInlineValue(value: string | number): string {
     .trim();
 }
 
-function buildWatchModeReportText(config: VisualizeConfig): string {
-  if (config.watch.enabled) {
+function buildWorkflowReportText(workflow: VisualizeWorkflow): string {
+  if (workflow === "watch") {
     return [
-      "Watch mode is enabled. Visual context is expected to be updated automatically by:",
-      "",
-      "`visualize watch`"
+      "Watch mode is running through `visualize watch`. Visual context is refreshed automatically after relevant file changes."
     ].join("\n");
   }
 
   return [
-    "Watch mode is currently disabled. After UI-related changes, refresh this visual context manually with:",
+    "Manual capture is active. After UI-related changes, refresh this visual context with:",
     "",
     "`visualize capture`"
   ].join("\n");

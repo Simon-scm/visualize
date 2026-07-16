@@ -17,7 +17,6 @@ export const visualizeConfigSchema = z.object({
   ),
   outputDir: z.string(),
   watch: z.object({
-    enabled: z.boolean(),
     include: z.array(z.string()),
     exclude: z.array(z.string())
   }),

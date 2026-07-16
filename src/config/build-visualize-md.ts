@@ -1,6 +1,11 @@
-import type { VisualizeConfig } from "./schema.js";
+export type VisualizeWorkflow = "manual" | "watch";
 
-export function buildVisualizeMd(config: VisualizeConfig): string {
+export const WORKFLOW_START_MARKER = "<!-- visualize:workflow:start -->";
+export const WORKFLOW_END_MARKER = "<!-- visualize:workflow:end -->";
+
+export function buildVisualizeMd(
+  workflow: VisualizeWorkflow = "manual"
+): string {
   return [
     "# Visualize",
     "",
@@ -20,7 +25,7 @@ export function buildVisualizeMd(config: VisualizeConfig): string {
     "",
     "## Updating visual context",
     "",
-    buildWatchModeInstructions(config),
+    buildManagedWorkflowBlock(workflow),
     "",
     "## Notes",
     "",
@@ -29,21 +34,27 @@ export function buildVisualizeMd(config: VisualizeConfig): string {
   ].join("\n");
 }
 
-function buildWatchModeInstructions(config: VisualizeConfig): string {
-  if (config.watch.enabled) {
+export function buildManagedWorkflowBlock(
+  workflow: VisualizeWorkflow
+): string {
+  return [
+    WORKFLOW_START_MARKER,
+    buildWorkflowInstructions(workflow),
+    WORKFLOW_END_MARKER
+  ].join("\n");
+}
+
+function buildWorkflowInstructions(workflow: VisualizeWorkflow): string {
+  if (workflow === "watch") {
     return [
-      "Watch mode is enabled.",
+      "Watch mode is currently running through `visualize watch`.",
       "",
-      "Visual context is expected to be updated automatically by:",
-      "",
-      "`visualize watch`",
-      "",
-      "Do not rely on stale screenshots. Check `.visualize/reports/context.md` for the latest generated timestamp."
+      "Visual context is refreshed automatically after relevant file changes. Check `.visualize/reports/context.md` for the latest generated timestamp."
     ].join("\n");
   }
 
   return [
-    "Watch mode is currently disabled.",
+    "Manual capture is currently active.",
     "",
     "After changing HTML, CSS, frontend components, routes, or UI assets, refresh the visual context manually with:",
     "",

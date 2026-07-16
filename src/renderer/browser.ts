@@ -9,7 +9,9 @@ export async function launchBrowser() {
         [
           "Playwright Chromium is not installed.",
           "",
-          "Install the required browser binary with:",
+          "Install Playwright directly and download the required browser binary with:",
+          "",
+          "  pnpm add -D playwright",
           "",
           "  pnpm exec playwright install chromium",
           "",

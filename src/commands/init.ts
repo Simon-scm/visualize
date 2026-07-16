@@ -4,8 +4,9 @@ import fs from "fs-extra";
 import { defaultConfig } from "../config/default-config.js";
 import { loadConfig } from "../config/load-config.js";
 import { writeConfig } from "../config/write-config.js";
-import { writeVisualizeMdIfMissing } from "../config/write-visualize-md.js";
+import { syncVisualizeMd } from "../config/write-visualize-md.js";
 import { logger } from "../utils/logger.js";
+import { getActiveWatchPid } from "../watch/watch-state.js";
 
 const CONFIG_FILE_NAME = "visualize.config.yml";
 
@@ -25,11 +26,14 @@ export function registerInitCommand(program: Command): void {
         logger.success(`${CONFIG_FILE_NAME} created.`);
       }
 
-      const visualizeMd = await writeVisualizeMdIfMissing(config);
+      const workflow = (await getActiveWatchPid(config.outputDir))
+        ? "watch"
+        : "manual";
+      const visualizeMd = await syncVisualizeMd(workflow);
       if (visualizeMd.created) {
         logger.success("VISUALIZE.md created.");
       } else {
-        logger.info("VISUALIZE.md already exists. Leaving it unchanged.");
+        logger.info("VISUALIZE.md workflow synchronized.");
       }
     });
 }

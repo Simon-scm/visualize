@@ -1,7 +1,6 @@
 import path from "node:path";
 import fs from "fs-extra";
 import { describe, expect, it } from "vitest";
-import { defaultConfig } from "../../src/config/default-config.js";
 import type { VisualizeManifest } from "../../src/output/manifest.js";
 import { writeReport } from "../../src/output/write-report.js";
 import { withTempProject } from "../helpers/temp-project.js";
@@ -45,19 +44,12 @@ const manifest: VisualizeManifest = {
 };
 
 describe("writeReport", () => {
-  it("writes a report with manual capture instructions when watch is disabled", async () => {
+  it("writes a report with manual capture instructions", async () => {
     await withTempProject(async () => {
       const reportPath = await writeReport({
         manifest,
         outputDir: ".visualize",
-        config: {
-          ...defaultConfig,
-          watch: {
-            enabled: false,
-            include: [],
-            exclude: []
-          }
-        }
+        workflow: "manual"
       });
 
       const report = await fs.readFile(path.join(process.cwd(), reportPath), "utf8");
@@ -73,19 +65,12 @@ describe("writeReport", () => {
     });
   });
 
-  it("writes a report with watch instructions when watch is enabled", async () => {
+  it("writes a report with watch instructions while watch is running", async () => {
     await withTempProject(async () => {
       const reportPath = await writeReport({
         manifest,
         outputDir: ".visualize",
-        config: {
-          ...defaultConfig,
-          watch: {
-            enabled: true,
-            include: [],
-            exclude: []
-          }
-        }
+        workflow: "watch"
       });
 
       const report = await fs.readFile(path.join(process.cwd(), reportPath), "utf8");

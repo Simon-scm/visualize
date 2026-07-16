@@ -16,11 +16,13 @@ AI coding assistants should use these files as the current rendered visual refer
 
 ## Updating visual context
 
-Watch mode is currently disabled.
+<!-- visualize:workflow:start -->
+Manual capture is currently active.
 
 After changing HTML, CSS, frontend components, routes, or UI assets, refresh the visual context manually with:
 
 `visualize capture`
+<!-- visualize:workflow:end -->
 
 ## Notes
 

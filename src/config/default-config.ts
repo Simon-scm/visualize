@@ -12,7 +12,6 @@ export const defaultConfig: VisualizeConfig = {
   ],
   outputDir: ".visualize",
   watch: {
-    enabled: false,
     include: ["src/**/*.{html,css,scss,js,jsx,ts,tsx}", "public/**/*"],
     exclude: ["node_modules/**", ".visualize/**"]
   },

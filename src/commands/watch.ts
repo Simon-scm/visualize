@@ -3,8 +3,14 @@ import chokidar from "chokidar";
 import path from "node:path";
 import picomatch from "picomatch";
 import { loadConfig } from "../config/load-config.js";
+import { syncVisualizeMd } from "../config/write-visualize-md.js";
 import { runCapture } from "../core/run-capture.js";
+import { ensureOutputStructure } from "../output/ensure-output-structure.js";
 import { logger } from "../utils/logger.js";
+import {
+  activateWatch,
+  deactivateWatch
+} from "../watch/watch-state.js";
 
 const DEBOUNCE_MS = 1000;
 
@@ -14,14 +20,17 @@ export function registerWatchCommand(program: Command): void {
     .description("Watch UI-relevant files and capture visual context on changes.")
     .action(async () => {
       const config = await loadConfig();
-
-      if (!config.watch.enabled) {
-        logger.info("Warning: watch.enabled is false in visualize.config.yml.");
-        logger.info("Starting watch mode anyway for this session.");
-        logger.info("");
-      }
+      await ensureOutputStructure(config.outputDir);
+      await activateWatch(config.outputDir);
+      await syncVisualizeMd("watch");
 
       logger.info("Starting visualize watch...");
+      logger.info("");
+      logger.info("Watch mode is a running process and keeps this terminal open.");
+      logger.info(
+        "Run it in a second terminal or let your AI coding agent manage it in the background."
+      );
+      logger.info("Press Ctrl+C to stop.");
       logger.info("");
       logger.info("Watching:");
       for (const includePattern of config.watch.include) {
@@ -32,12 +41,12 @@ export function registerWatchCommand(program: Command): void {
       for (const excludePattern of config.watch.exclude) {
         logger.info(`  ${excludePattern}`);
       }
-      logger.info("");
-      logger.info("Press Ctrl+C to stop.");
 
       let debounceTimer: NodeJS.Timeout | undefined;
       let isCapturing = false;
       let pendingCapture = false;
+      let isStopping = false;
+      let watcher: ReturnType<typeof chokidar.watch> | undefined;
       const changedFiles = new Set<string>();
       const isIncluded = picomatch(config.watch.include);
       const isExcluded = picomatch(config.watch.exclude);
@@ -84,34 +93,61 @@ export function registerWatchCommand(program: Command): void {
         }, delayMs);
       };
 
-      const watcher = chokidar.watch(watchRoots, {
-        ignored: (ignoredPath) => isExcluded(normalizeChangedPath(ignoredPath)),
-        ignoreInitial: true,
-        persistent: true
-      });
-
-      watcher.on("all", (_eventName, changedPath) => {
-        const normalizedPath = normalizeChangedPath(changedPath);
-        if (!isIncluded(normalizedPath) || isExcluded(normalizedPath)) {
+      const stopWatch = async (): Promise<void> => {
+        if (isStopping) {
           return;
         }
 
-        logger.info(`file changed: ${normalizedPath}`);
-        changedFiles.add(normalizedPath);
-        scheduleCapture();
-      });
+        isStopping = true;
+        if (debounceTimer) {
+          clearTimeout(debounceTimer);
+        }
+        await watcher?.close();
+        await deactivateWatch(config.outputDir);
+        await syncVisualizeMd("manual");
+        logger.info("");
+        logger.info("Visualize watch stopped. Manual capture is active.");
+      };
 
-      watcher.on("error", (error) => {
-        logger.error(error instanceof Error ? error.message : String(error));
-      });
-
-      process.once("SIGINT", () => {
-        void watcher.close().finally(() => {
+      const handleStopSignal = (): void => {
+        void stopWatch().finally(() => {
           process.exit(0);
         });
-      });
+      };
 
-      await new Promise<void>(() => undefined);
+      process.once("SIGINT", handleStopSignal);
+      process.once("SIGTERM", handleStopSignal);
+
+      try {
+        watcher = chokidar.watch(watchRoots, {
+          ignored: (ignoredPath) => isExcluded(normalizeChangedPath(ignoredPath)),
+          ignoreInitial: true,
+          persistent: true
+        });
+
+        watcher.on("all", (_eventName, changedPath) => {
+          const normalizedPath = normalizeChangedPath(changedPath);
+          if (!isIncluded(normalizedPath) || isExcluded(normalizedPath)) {
+            return;
+          }
+
+          logger.info(`file changed: ${normalizedPath}`);
+          changedFiles.add(normalizedPath);
+          scheduleCapture();
+        });
+
+        watcher.on("error", (error) => {
+          logger.error(error instanceof Error ? error.message : String(error));
+        });
+
+        await new Promise<void>(() => undefined);
+      } catch (error) {
+        await stopWatch();
+        throw error;
+      } finally {
+        process.removeListener("SIGINT", handleStopSignal);
+        process.removeListener("SIGTERM", handleStopSignal);
+      }
     });
 }
 

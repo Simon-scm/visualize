@@ -14,7 +14,6 @@ viewports:
     height: 844
 outputDir: .visualize
 watch:
-  enabled: false
   include: []
   exclude: []
 stabilize:
@@ -36,7 +35,7 @@ describe("loadConfig", () => {
       expect(config.viewports).toEqual([
         { name: "mobile", width: 390, height: 844 }
       ]);
-      expect(config.watch.enabled).toBe(false);
+      expect(config.watch).toEqual({ include: [], exclude: [] });
       expect(config.stabilize.timeoutMs).toBe(30000);
     });
   });
