@@ -4,13 +4,14 @@ import { Command } from "commander";
 import { registerCaptureCommand } from "./commands/capture.js";
 import { registerInitCommand } from "./commands/init.js";
 import { registerWatchCommand } from "./commands/watch.js";
+import { getPackageVersion } from "./version.js";
 
 const program = new Command();
 
 program
   .name("visualize")
   .description("Generate visual context for local web applications.")
-  .version("0.1.0");
+  .version(getPackageVersion());
 
 registerInitCommand(program);
 registerCaptureCommand(program);

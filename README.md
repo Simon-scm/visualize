@@ -9,12 +9,12 @@ AI assistants can read source code, but they do not automatically know what the 
 Install Visualize and Playwright from the public pnpm registry:
 
 ```bash
-pnpm add -D visualize playwright
+pnpm add -D @simonscm/visualize playwright
 pnpm exec playwright install chromium
 pnpm exec visualize init
 ```
 
-The registry package name `visualize` is temporary and will be replaced before publication. Playwright caches Chromium per user, so the browser download may already exist.
+Playwright caches Chromium per user, so the browser download may already exist.
 
 `visualize init` creates:
 
@@ -91,4 +91,4 @@ Screenshot filenames are normalized from the route and viewport names. The manif
 
 ## License
 
-MIT
+Licensed under the [MIT License](LICENSE).

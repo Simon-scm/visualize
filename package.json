@@ -1,8 +1,26 @@
 {
-  "name": "visualize",
+  "name": "@simonscm/visualize",
   "version": "0.1.0",
   "description": "Local-first CLI for capturing visual context from web applications.",
+  "keywords": [
+    "ai",
+    "cli",
+    "frontend",
+    "local-first",
+    "playwright",
+    "screenshots",
+    "visual-testing"
+  ],
+  "author": "Simon Schmitz",
   "license": "MIT",
+  "homepage": "https://github.com/Simon-scm/visualize#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Simon-scm/visualize.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Simon-scm/visualize/issues"
+  },
   "type": "module",
   "bin": {
     "visualize": "./dist/cli.js"
@@ -10,6 +28,9 @@
   "files": [
     "dist"
   ],
+  "publishConfig": {
+    "access": "public"
+  },
   "scripts": {
     "dev": "tsx src/cli.ts",
     "build": "tsup src/cli.ts --format esm --dts --clean",
@@ -17,10 +38,11 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
-    "check": "pnpm typecheck && pnpm test && pnpm build"
+    "check": "pnpm typecheck && pnpm test && pnpm build",
+    "prepublishOnly": "pnpm check"
   },
   "dependencies": {
-    "chokidar": "^5.0.0",
+    "chokidar": "^4.0.3",
     "commander": "^12.1.0",
     "fs-extra": "^11.2.0",
     "picomatch": "^4.0.4",
