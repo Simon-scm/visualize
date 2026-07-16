@@ -8,6 +8,8 @@ dist/
 
 # Visualize runtime output
 .visualize/
+/visualize.config.yml
+/VISUALIZE.md
 
 # Local agent/tool state
 .agents/
