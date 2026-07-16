@@ -2,6 +2,7 @@
   "name": "visualize",
   "version": "0.1.0",
   "description": "Local-first CLI for capturing visual context from web applications.",
+  "license": "MIT",
   "type": "module",
   "bin": {
     "visualize": "./dist/cli.js"

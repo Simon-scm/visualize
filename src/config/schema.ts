@@ -24,7 +24,8 @@ export const visualizeConfigSchema = z.object({
   stabilize: z.object({
     waitUntil: z.enum(["load", "domcontentloaded", "networkidle"]),
     disableAnimations: z.boolean(),
-    waitMs: z.number()
+    waitMs: z.number(),
+    timeoutMs: z.number()
   })
 });
 

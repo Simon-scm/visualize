@@ -2,6 +2,7 @@ import path from "node:path";
 import type { Browser, Page, Response } from "playwright";
 import type { VisualizeConfig } from "../config/schema.js";
 import type { ManifestCapture } from "../output/manifest.js";
+import { createScreenshotFileName } from "../utils/filename.js";
 import { stabilizePage } from "./stabilize-page.js";
 
 export async function captureRoute(params: {
@@ -13,17 +14,21 @@ export async function captureRoute(params: {
   const { browser, config, route, viewport } = params;
   const startedAt = Date.now();
   const requestedUrl = buildUrl(config.baseUrl, route.path);
+  const screenshotFileName = createScreenshotFileName({
+    routeName: route.name,
+    viewportName: viewport.name
+  });
   const screenshot = toManifestPath(
     config.outputDir,
     "latest",
     "screenshots",
-    `${route.name}.${viewport.name}.png`
+    screenshotFileName
   );
   const screenshotPath = path.join(
     config.outputDir,
     "latest",
     "screenshots",
-    `${route.name}.${viewport.name}.png`
+    screenshotFileName
   );
 
   const captureBase = {
@@ -60,7 +65,8 @@ export async function captureRoute(params: {
     });
 
     response = await page.goto(requestedUrl, {
-      waitUntil: config.stabilize.waitUntil
+      waitUntil: config.stabilize.waitUntil,
+      timeout: config.stabilize.timeoutMs
     });
     await stabilizePage(page, config);
     finalUrl = page.url();

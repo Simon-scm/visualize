@@ -19,6 +19,7 @@ export const defaultConfig: VisualizeConfig = {
   stabilize: {
     waitUntil: "networkidle",
     disableAnimations: true,
-    waitMs: 300
+    waitMs: 300,
+    timeoutMs: 30000
   }
 };

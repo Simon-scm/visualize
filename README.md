@@ -1,66 +1,70 @@
-# Visualize CLI - Eyes for your AI Agents 
+# Visualize CLI
 
-`visualize` is a local-first CLI for generating browser-rendered visual context from local web applications.
+`visualize` is a local-first CLI that captures rendered browser context for local web applications.
 
-It is designed for AI-assisted frontend development: AI coding assistants can read your source code, but they usually do not know what your app actually looks like in the browser. Visualize closes that gap by capturing screenshots, browser diagnostics, and an AI-readable context report for your web app.
+It is built for AI-assisted frontend development. Coding agents can read source files, but they usually do not know what the app actually looks like in a browser. `visualize` creates screenshots, browser diagnostics, and an AI-readable Markdown report so the rendered UI can become part of the project context.
 
-## Why?
+## Features
 
-AI-assisted frontend development often breaks down when changes become visual.
-
-Typical problems:
-
-The AI can edit HTML, CSS, JSX, or TSX, but cannot reliably see the rendered result.
-Developers manually open the browser, inspect layouts, take screenshots, and describe visual issues back to the AI.
-Mobile and desktop regressions are easy to miss.
-Visual feedback is not stored as persistent project context.
-Existing visual testing tools are often focused on CI, QA, or design review, not local AI-coding workflows.
-
-Visualize creates a .visualize folder with screenshots, diagnostics, and a Markdown report that can be used as visual context for AI coding assistants.
-
-## What It Does
-
-Visualize can currently:
-
-- initialize a project with visualize.config.yml
-- create persistent AI instructions in VISUALIZE.md
-- capture configured routes in a real browser using Playwright
-- render each route across configured viewports
-- save screenshots to .visualize/latest/screenshots/
-- write browser diagnostics to .visualize/manifest.json
-- generate an AI-readable report at .visualize/reports/context.md
-- watch UI-related files and automatically refresh visual context after changes
+- initialize a project with `visualize.config.yml`
+- create persistent AI instructions in `VISUALIZE.md`
+- capture configured routes in headless Chromium with Playwright
+- render every configured route across every configured viewport
+- save screenshots in `.visualize/latest/screenshots/`
+- write structured diagnostics to `.visualize/manifest.json`
+- write an AI-readable report to `.visualize/reports/context.md`
+- watch UI-relevant files and refresh visual context after changes
 - validate configuration with Zod
+- run typecheck, tests, and build through one check command
 
-## Install
+## Requirements
 
-This project uses `pnpm`.
+- Node.js 18 or newer
+- pnpm
+- a local web app running at the configured `baseUrl`
+- Playwright Chromium browser binary
+
+Install the CLI in your project:
 
 ```bash
-pnpm install
+pnpm add -D visualize
 ```
 
-Playwright browser binaries are required for screenshot capture:
+Install the Chromium binary used by Playwright:
 
 ```bash
 pnpm exec playwright install chromium
 ```
 
+If Chromium is missing, `visualize capture` will print this setup command.
+
+With a project-local installation, run the CLI through `pnpm exec`:
+
+```bash
+pnpm exec visualize --help
+```
+
 ## Quick Start
 
-Initialize a project:
+Initialize `visualize` in a project:
 
 ```bash
-pnpm dev -- init
+pnpm exec visualize init
 ```
 
-Start your local web app, for example on `http://localhost:5173`, then capture visual context:
+Start your local web app, for example at:
+
+```txt
+http://localhost:5173
+```
+
+Capture visual context:
 
 ```bash
-pnpm dev -- capture
+pnpm exec visualize capture
 ```
 
-This creates:
+Review the generated files:
 
 ```txt
 .visualize/
@@ -73,13 +77,31 @@ VISUALIZE.md
 visualize.config.yml
 ```
 
-Use watch mode during frontend work:
+During frontend work, use watch mode:
 
 ```bash
-pnpm dev -- watch
+pnpm exec visualize watch
 ```
 
-Watch mode does not run an initial capture. Run `visualize capture` once first if you need a fresh baseline before editing files.
+Watch mode does not run an initial capture. Run `pnpm exec visualize capture` once first if you need a fresh baseline before editing.
+
+## Global Installation
+
+The recommended setup is project-local installation so every project can pin its own `visualize` version.
+
+If you prefer a global command, install it globally:
+
+```bash
+pnpm add -g visualize
+```
+
+Then you can run:
+
+```bash
+visualize init
+visualize capture
+visualize watch
+```
 
 ## Commands
 
@@ -93,34 +115,42 @@ Creates:
 Existing files are not overwritten.
 
 ```bash
-pnpm dev -- init
+pnpm exec visualize init
 ```
 
 ### `visualize capture`
 
-Loads `visualize.config.yml`, launches Chromium, captures all configured route and viewport combinations, and writes:
+Loads `visualize.config.yml`, opens each configured route in Chromium, captures every configured viewport, and writes screenshots, manifest, and report files.
+
+```bash
+pnpm exec visualize capture
+```
+
+Output:
 
 - `.visualize/latest/screenshots/*.png`
 - `.visualize/manifest.json`
 - `.visualize/reports/context.md`
 
-```bash
-pnpm dev -- capture
-```
-
 Capture failures do not stop the whole run. Failed captures are recorded in the manifest and report with an error message.
+
+HTTP responses such as `404` are still captured as rendered pages. They are not automatically treated as capture failures, because the screenshot may be useful context for AI-assisted debugging.
 
 ### `visualize watch`
 
-Watches files from `watch.include`, ignores files from `watch.exclude`, and reruns the existing capture pipeline after relevant changes.
+Watches files from `watch.include`, ignores files from `watch.exclude`, and reruns the same capture pipeline after relevant file changes.
 
 ```bash
-pnpm dev -- watch
+pnpm exec visualize watch
 ```
 
-Multiple quick file changes are debounced into one capture. Captures are not run in parallel.
+Behavior:
 
-If `watch.enabled` is `false`, the command prints a warning but still starts for the current session.
+- no initial capture on startup
+- 1000 ms debounce for quick file changes
+- no parallel captures
+- `.visualize/**` ignored by default
+- if `watch.enabled` is `false`, a warning is printed but watch mode still starts for the current session
 
 ## Configuration
 
@@ -158,11 +188,12 @@ stabilize:
   waitUntil: networkidle
   disableAnimations: true
   waitMs: 300
+  timeoutMs: 30000
 ```
 
-Set `baseUrl` to the URL of your running local app.
+Set `baseUrl` to the URL where your app is running locally.
 
-Add or remove routes manually:
+Add routes manually:
 
 ```yaml
 routes:
@@ -184,11 +215,13 @@ viewports:
     height: 1024
 ```
 
+`stabilize.timeoutMs` controls the Playwright navigation timeout for each route capture. If a route does not load within this time, the capture is marked as `failed` in the manifest and report, and the remaining captures continue.
+
 ## Output Files
 
 ### Screenshots
 
-Screenshots are stored at:
+Screenshots are stored in:
 
 ```txt
 .visualize/latest/screenshots/
@@ -199,6 +232,12 @@ Example:
 ```txt
 .visualize/latest/screenshots/home.mobile.png
 .visualize/latest/screenshots/home.desktop.png
+```
+
+Screenshot filenames are generated from `route.name` and `viewport.name`. These names are normalized to lowercase URL-safe file segments, so a route named `Login / Sign Up` with viewport `Mobile XL` becomes:
+
+```txt
+.visualize/latest/screenshots/login-sign-up.mobile-xl.png
 ```
 
 ### Manifest
@@ -220,23 +259,36 @@ Example:
 
 ### AI Context Report
 
-`.visualize/reports/context.md` summarizes the current visual context for AI coding assistants.
+`.visualize/reports/context.md` summarizes the current visual context:
 
-It includes:
-
-- capture summary
+- total captures
+- successful and failed captures
 - screenshot references
 - browser diagnostics
-- failed captures
-- project instructions
+- failed capture errors
+- project instructions for AI coding assistants
 
 ### `VISUALIZE.md`
 
-`VISUALIZE.md` is a persistent project-level instruction file. It tells AI coding assistants where to find the latest report and screenshots.
+`VISUALIZE.md` is a persistent project-level instruction file for AI coding assistants.
+
+Its wording depends on `watch.enabled`:
+
+- `watch.enabled: false` tells the user or AI assistant to run `visualize capture` after UI changes
+- `watch.enabled: true` says visual context is expected to be updated by `visualize watch`
 
 ## Development
 
-## Scripts
+Clone this repository and install dependencies:
+
+```bash
+pnpm install
+pnpm exec playwright install chromium
+```
+
+During local development, use `pnpm dev -- ...` to run the TypeScript source directly:
+
+Scripts:
 
 ```bash
 pnpm dev -- init
@@ -265,8 +317,13 @@ pnpm typecheck && pnpm test && pnpm build
 - no DOM extraction or CSS metadata extraction yet
 - no MCP server or AI API integration
 
-## TODO
+## Roadmap
 
 - automatic endpoint detection
 - auth simulation
 - dynamic recaptures based on changed files / affected routes
+- more rendered metadata
+
+## License
+
+MIT. This project is open source and may be used, modified, and distributed under the terms of the MIT License.

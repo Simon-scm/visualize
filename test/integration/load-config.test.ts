@@ -21,6 +21,7 @@ stabilize:
   waitUntil: networkidle
   disableAnimations: true
   waitMs: 300
+  timeoutMs: 30000
 `;
 
 describe("loadConfig", () => {
@@ -36,6 +37,7 @@ describe("loadConfig", () => {
         { name: "mobile", width: 390, height: 844 }
       ]);
       expect(config.watch.enabled).toBe(false);
+      expect(config.stabilize.timeoutMs).toBe(30000);
     });
   });
 
